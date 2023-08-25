@@ -1,29 +1,32 @@
 package com.example.challengeapiexternal.service;
 
+import com.example.challengeapiexternal.dto.PostDTO;
 import com.example.challengeapiexternal.dto.ResponseDTO;
 import com.example.challengeapiexternal.entity.Post;
 import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.PostRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
 
     private PostRepository postRepository;
     private final HistoryService historyService;
-
+    private ModelMapper mapper;
     private ExternalApiService externalApiService;
 
     @Autowired
-
-    public PostService(PostRepository postRepository, HistoryService historyService, ExternalApiService externalApiService) {
+    public PostService(PostRepository postRepository, HistoryService historyService, ModelMapper mapper, ExternalApiService externalApiService) {
         this.postRepository = postRepository;
         this.historyService = historyService;
+        this.mapper = mapper;
         this.externalApiService = externalApiService;
     }
 
@@ -43,18 +46,7 @@ public class PostService {
         return mapToQueryPosts(pageable);
     }
 
-    private ResponseDTO mapToQueryPosts( Pageable pageable){
-        Page<Post> postsPage = postRepository.findAll(pageable);
 
-        List<Post> content = postsPage.getContent();
-        int currentPage = postsPage.getNumber();
-        int pageSize = postsPage.getSize();
-        long totalElements = postsPage.getTotalElements();
-        int totalPages = postsPage.getTotalPages();
-        boolean isLast = postsPage.isLast();
-
-        return new ResponseDTO(content, pageSize, currentPage, totalPages,  totalElements,  isLast);
-    }
 
     public void disablePost(Long postId) {
     }
@@ -103,4 +95,27 @@ public class PostService {
         historyService.saveStatusInHistory(post, PostState.ENABLED);
     }
 
+    private ResponseDTO mapToQueryPosts( Pageable pageable){
+        Page<Post> posts = postRepository.findAll(pageable);
+
+        List<Post> listOfPost = posts.getContent();
+
+        List<PostDTO> content =  listOfPost.stream().map(this::mapToDTO).collect(Collectors.toList());
+
+        ResponseDTO postResponse = new ResponseDTO();
+        postResponse.setContent(content);
+        postResponse.setPageNo(posts.getNumber());
+        postResponse.setPageSize(posts.getSize());
+        postResponse.setTotalElements(posts.getTotalElements());
+        postResponse.setTotalPages(posts.getTotalPages());
+        postResponse.setLast(posts.isLast());
+
+        return postResponse;
+    }
+
+    private PostDTO mapToDTO(Post post){
+        return mapper.map(post, PostDTO.class);
+    }
+
 }
+

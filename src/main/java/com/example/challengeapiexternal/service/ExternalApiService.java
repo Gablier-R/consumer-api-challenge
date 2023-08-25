@@ -13,11 +13,6 @@ import java.util.Objects;
 public class ExternalApiService {
     private static final String EXTERNAL_API_URL = "https://jsonplaceholder.typicode.com/posts/";
 
-    public List<Post> fetchExternalPosts() {
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Post[]> response = restTemplate.getForEntity(EXTERNAL_API_URL, Post[].class);
-        return Arrays.asList(Objects.requireNonNull(response.getBody()));
-    }
     public Post fetchPostById(Long postId) {
         String postUrl = EXTERNAL_API_URL + postId;
         RestTemplate restTemplate = new RestTemplate();
