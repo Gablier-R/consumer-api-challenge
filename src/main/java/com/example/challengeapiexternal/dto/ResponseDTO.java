@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 public class ResponseDTO {
 
-    private List<PostDTO> content;
+    private List<Post> posts;
     private int pageNo;
     private int pageSize;
     private int totalPages;

@@ -6,6 +6,8 @@ import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.HistoryRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class HistoryService {
 

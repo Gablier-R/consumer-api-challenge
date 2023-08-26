@@ -1,69 +1,98 @@
 package com.example.challengeapiexternal.service;
 
-import com.example.challengeapiexternal.dto.PostDTO;
 import com.example.challengeapiexternal.dto.ResponseDTO;
+import com.example.challengeapiexternal.entity.History;
 import com.example.challengeapiexternal.entity.Post;
 import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.PostRepository;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class PostService {
 
     private PostRepository postRepository;
     private final HistoryService historyService;
-    private ModelMapper mapper;
     private ExternalApiService externalApiService;
 
     @Autowired
-    public PostService(PostRepository postRepository, HistoryService historyService, ModelMapper mapper, ExternalApiService externalApiService) {
+    public PostService(PostRepository postRepository, HistoryService historyService, ExternalApiService externalApiService) {
         this.postRepository = postRepository;
         this.historyService = historyService;
-        this.mapper = mapper;
         this.externalApiService = externalApiService;
     }
 
-    public Optional<Post> getPostById(Long postId) {
-        return postRepository.findById(postId);
-    }
+//    public Post validatePost(long postId){
+//
+//        if (postId > 100)
+//        {
+//            throw new NotFoundExceptionExternal("Post", "id", postId);
+//        }
+//        else if (postRepository.findById(postId).isPresent())
+//        {
+//            throw new NotFoundException("Post", "id", postId);
+//        }
+//
+//        return processPost(postId);
+//    }
 
     public Post processPost(long postId) {
         return postRepository.findById(postId)
-                .orElseGet(() -> {
-                    var post = postAlreadyExists(postId);
-            return savePostInLocal(postId, post);
-                });
+                .orElseGet(() -> savePostInLocal(postId, postAlreadyExists(postId)));
     }
+
     public ResponseDTO queryPosts(int pageNo, int pageSize) {
-        Pageable pageable = PageRequest.of(pageNo, pageSize);
-        return mapToQueryPosts(pageable);
+        return mapToPageableQueryPosts(PageRequest.of(pageNo, pageSize));
     }
 
+    public Post disablePost(long postId) {
+        Post post = getPostByIdOrException(postId);
 
-
-    public void disablePost(Long postId) {
+        historyService.saveStatusInHistory(post, PostState.DISABLED);
+        return postRepository.save(post);
     }
 
-    public Post reprocessPost(Long postId) {
+    public Post reprocessPost(long postId) {
+        Post post = getPostByIdOrException(postId);
 
-        return null;
+        try {
+            historyService.saveStatusInHistory(post, PostState.UPDATING);
+            externalApiService.fetchPostById(postId);
+
+            post.setReprocessed(true);
+
+        } catch (Exception e) {
+            historyService.saveStatusInHistory(post, PostState.FAILED);
+            historyService.saveStatusInHistory(post, PostState.DISABLED);
+            throw e;
+        }
+        return postRepository.save(post);
     }
 
 
 
 
     //Mets for help main mets
-    public Post savePostInLocal(long postId, Post post) {
+
+    private Post getPostByIdOrException(long postId) {
+        return postRepository.findById(postId).orElseThrow(() ->
+                new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Post not found/exist in database"
+                )
+        );
+    }
+
+    private Post savePostInLocal(long postId, Post post) {
         try {
             fetchPost(postId, post);
-            fetchComments(post, postId);
         } catch (Exception e) {
             historyService.saveStatusInHistory(post, PostState.FAILED);
             historyService.saveStatusInHistory(post, PostState.DISABLED);
@@ -80,10 +109,13 @@ public class PostService {
 
     private void fetchPost(long postId, Post post){
         historyService.saveStatusInHistory(post, PostState.POST_FIND);
-        historyService.saveStatusInHistory(post, PostState.POST_OK);
 
         post.setTitle(externalApiService.fetchPostById(postId).getTitle());
         post.setBody(externalApiService.fetchPostById(postId).getBody());
+
+        historyService.saveStatusInHistory(post, PostState.POST_OK);
+
+        fetchComments(post, postId);
     }
 
     private void fetchComments(Post post, long postId) {
@@ -95,26 +127,25 @@ public class PostService {
         historyService.saveStatusInHistory(post, PostState.ENABLED);
     }
 
-    private ResponseDTO mapToQueryPosts( Pageable pageable){
+    private ResponseDTO mapToPageableQueryPosts( Pageable pageable){
         Page<Post> posts = postRepository.findAll(pageable);
 
         List<Post> listOfPost = posts.getContent();
 
-        List<PostDTO> content =  listOfPost.stream().map(this::mapToDTO).collect(Collectors.toList());
+        List<Post> content = new ArrayList<>(listOfPost);
 
+        return mapToResponseDTO(posts, content);
+    }
+
+    private ResponseDTO mapToResponseDTO(Page<Post> posts, List<Post> post) {
         ResponseDTO postResponse = new ResponseDTO();
-        postResponse.setContent(content);
+        postResponse.setPosts(post);
         postResponse.setPageNo(posts.getNumber());
         postResponse.setPageSize(posts.getSize());
         postResponse.setTotalElements(posts.getTotalElements());
         postResponse.setTotalPages(posts.getTotalPages());
         postResponse.setLast(posts.isLast());
-
         return postResponse;
-    }
-
-    private PostDTO mapToDTO(Post post){
-        return mapper.map(post, PostDTO.class);
     }
 
 }

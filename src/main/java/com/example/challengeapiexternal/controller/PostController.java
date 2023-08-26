@@ -21,22 +21,20 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> disablePost(@PathVariable Long postId) {
-        postService.disablePost(postId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Post> disablePost(@PathVariable Long postId) {
+        return ResponseEntity.ok(postService.disablePost(postId));
     }
 
     @PutMapping("/{postId}")
     public ResponseEntity<Post> reprocessPost(@PathVariable Long postId) {
-        Post reprocessedPost = postService.reprocessPost(postId);
-        return new ResponseEntity<>(postService.reprocessPost(postId), HttpStatus.PROCESSING);
+        return new ResponseEntity<>(postService.reprocessPost(postId), HttpStatus.OK);
     }
 
     //http://localhost:8080/posts?pageNo=0&pageSize=5
     @GetMapping
-    public ResponseDTO queryPosts(@RequestParam( defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
-                                  @RequestParam( defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize){
-        return postService.queryPosts(pageNo, pageSize);
+    public ResponseEntity<ResponseDTO> queryPosts(@RequestParam( defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+                                                  @RequestParam( defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize){
+        return ResponseEntity.ok(postService.queryPosts(pageNo, pageSize));
     }
 
     @PostMapping("/{postId}")

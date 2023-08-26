@@ -1,5 +1,6 @@
 package com.example.challengeapiexternal.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -20,4 +21,6 @@ public class Post {
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name ="post_id")
     private List<History> history = new ArrayList<>();
+
+    private Boolean reprocessed = false;
 }
