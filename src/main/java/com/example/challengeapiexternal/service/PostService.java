@@ -71,7 +71,6 @@ public class PostService {
         } catch (Exception e) {
             historyService.saveStatusInHistory(post, PostState.FAILED);
             historyService.saveStatusInHistory(post, PostState.DISABLED);
-            throw e;
         }
         return postRepository.save(post);
     }
