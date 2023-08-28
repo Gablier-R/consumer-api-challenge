@@ -17,11 +17,6 @@ import java.util.Optional;
 
 @Service
 public record PostService (PostRepository postRepository, HistoryService historyService, ExternalApiService externalApiService) {
-
-    public ResponseDTO queryPosts(int pageNo, int pageSize) {
-        return mapToPageableQueryPosts(PageRequest.of(pageNo, pageSize));
-    }
-
     public Post validateprocessPost(long postId) {
         if (postId < 0 || postId > 100){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching post, resource not found: Post 1 - 100");
@@ -29,27 +24,7 @@ public record PostService (PostRepository postRepository, HistoryService history
         return processPost(postId);
     }
 
-    public Post processPost(long postId) {
-
-        Optional<Post> post = postRepository.findById(postId);
-
-        if (post.isEmpty()) {
-            return savePostInLocal(postId, postAlreadyNotExists(postId));
-        }
-        return post.get();
-    }
-
-//    public Post processPost(long postId) {
-//        return postRepository.findById(postId)
-//                .orElseGet(() -> savePostInLocal(postId, postAlreadyNotExists(postId)));
-//    }
-
-
-    public Post validateDisablePost(long postId){
-        return disablePost(postId);
-    }
-
-    public Post validateEnableToDisable(Long postId) {
+    public Post validateDisablePost(Long postId) {
         Post post = getPostByIdOrException(postId);
 
         if (!post.getIsEnabled()) {
@@ -58,21 +33,41 @@ public record PostService (PostRepository postRepository, HistoryService history
         return disablePost(postId) ;
     }
 
-    public Post disablePost(long postId) {
-        Post post = getPostByIdOrException(postId);
-        historyService.saveStatusInHistory(post, PostState.DISABLED);
-        return postRepository.save(post);
-    }
-
     public Post validatereprocessPost(long postId){
         Post post = getPostByIdOrException(postId);
 
         return reprocessPost(post.getId());
     }
 
-    public Post reprocessPost(long postId) {
-        Post post = getPostByIdOrException(postId);
+    public ResponseDTO queryPosts(int pageNo, int pageSize) {
+        return mapToPageableQueryPosts(PageRequest.of(pageNo, pageSize));
+    }
 
+
+
+//    public Post processPost(long postId) {
+//
+//        Optional<Post> post = postRepository.findById(postId);
+//
+//        if (post.isEmpty()) {
+//            return savePostInLocal(postId, postAlreadyNotExists(postId));
+//        }
+//        return post.get();
+//    }
+
+    public Post processPost(long postId) {
+        return postRepository.findById(postId)
+                .orElseGet(() -> savePostInLocal(postId, postAlreadyNotExists(postId)));
+    }
+
+    private Post disablePost(long postId) {
+        Post post = getPostByIdOrException(postId);
+        historyService.saveStatusInHistory(post, PostState.DISABLED);
+        return postRepository.save(post);
+    }
+
+    private Post reprocessPost(long postId) {
+        Post post = getPostByIdOrException(postId);
         try {
             historyService.saveStatusInHistory(post, PostState.UPDATING);
             externalApiService.fetchPostById(postId);
@@ -85,9 +80,6 @@ public record PostService (PostRepository postRepository, HistoryService history
         }
         return postRepository.save(post);
     }
-
-
-
 
     //Mets for help main mets
 
