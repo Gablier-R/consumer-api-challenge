@@ -12,9 +12,11 @@ import java.util.List;
 import java.util.Arrays;
 import java.util.Objects;
 
+import static com.example.challengeapiexternal.utils.AppConstants.EXTERNAL_API_URL;
+
+
 @Service
 public class ExternalApiService {
-    private static final String EXTERNAL_API_URL = "https://jsonplaceholder.typicode.com/posts/";
 
     public Post fetchPostById(Long postId) {
         String postUrl = EXTERNAL_API_URL + postId;
@@ -22,13 +24,19 @@ public class ExternalApiService {
 
         try {
             ResponseEntity<Post> response = restTemplate.getForEntity(postUrl, Post.class);
-            if (response.getStatusCode() == HttpStatus.OK) {
+            HttpStatus statusCode = (HttpStatus) response.getStatusCode();
+
+            if (statusCode == HttpStatus.OK) {
                 return response.getBody();
+            } else if (statusCode == HttpStatus.NOT_FOUND) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found in external api");
             } else {
-                throw new ResponseStatusException(response.getStatusCode(), "Error fetching post");
+                throw new ResponseStatusException(statusCode, "Error fetching post");
             }
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching post", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching post, resource not found", e);
         }
     }
 
@@ -52,6 +60,4 @@ public class ExternalApiService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching comments", e);
         }
     }
-
-
 }

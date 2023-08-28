@@ -1,18 +1,14 @@
 package com.example.challengeapiexternal.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.List;
 
-import java.util.Date;
-
-@Getter
-@AllArgsConstructor
-@NoArgsConstructor
-public class ErrorDetailsDTO {
-
-    private Date timeStamp;
-    private String message;
-    private String details;
-
+public record  ErrorDetailsDTO(
+        LocalDateTime timestamp,
+        List<String> message
+)
+{
+    public ErrorDetailsDTO(List<String> message) {
+        this(LocalDateTime.now(), message);
+    }
 }

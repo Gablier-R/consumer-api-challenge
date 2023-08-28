@@ -6,20 +6,17 @@ import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.HistoryRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
-public class HistoryService {
-
-    private final HistoryRepository historyRepository;
-
-    public HistoryService(HistoryRepository historyRepository) {
-        this.historyRepository = historyRepository;
-    }
+public record HistoryService(HistoryRepository historyRepository) {
 
     public void saveStatusInHistory(Post post, PostState status){
-
         post.getHistory().add(new History(status));
+    }
+
+    public Optional<History> getHistoryByIdPost(long postId){
+        return historyRepository.findById(postId);
     }
 
 }
