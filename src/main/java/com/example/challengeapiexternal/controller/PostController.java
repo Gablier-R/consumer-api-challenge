@@ -16,7 +16,7 @@ public record PostController (PostService postService) {
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<Post> disablePost(@PathVariable Long postId) {
-        return ResponseEntity.ok(postService.disablePost(postId));
+        return ResponseEntity.ok(postService.validateEnableToDisable(postId));
     }
 
     @PutMapping("/{postId}")

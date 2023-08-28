@@ -23,4 +23,7 @@ public class Post {
     private List<History> history = new ArrayList<>();
 
     private Boolean reprocessed = false;
+
+    @JsonIgnore
+    private Boolean isEnabled;
 }

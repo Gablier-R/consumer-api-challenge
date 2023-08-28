@@ -1,9 +1,11 @@
 package com.example.challengeapiexternal.service;
 
 import com.example.challengeapiexternal.dto.ResponseDTO;
+import com.example.challengeapiexternal.entity.History;
 import com.example.challengeapiexternal.entity.Post;
 import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.PostRepository;
+import org.modelmapper.ValidationException;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,8 +23,8 @@ public record PostService (PostRepository postRepository, HistoryService history
     }
 
     public Post validateprocessPost(long postId) {
-        if (postId < 1 || postId > 100){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching post, resource not found");
+        if (postId < 0 || postId > 100){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching post, resource not found: Post 1 - 100");
         }
         return processPost(postId);
     }
@@ -46,13 +48,27 @@ public record PostService (PostRepository postRepository, HistoryService history
     public Post validateDisablePost(long postId){
         return disablePost(postId);
     }
+
+    public Post validateEnableToDisable(Long postId) {
+        Post post = getPostByIdOrException(postId);
+
+        if (!post.getIsEnabled()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Disables a post that is in the ENABLED state.");
+        }
+        return disablePost(postId) ;
+    }
+
     public Post disablePost(long postId) {
         Post post = getPostByIdOrException(postId);
         historyService.saveStatusInHistory(post, PostState.DISABLED);
         return postRepository.save(post);
     }
 
+    public Post validatereprocessPost(long postId){
+        Post post = getPostByIdOrException(postId);
 
+        return reprocessPost(post.getId());
+    }
 
     public Post reprocessPost(long postId) {
         Post post = getPostByIdOrException(postId);
@@ -115,6 +131,7 @@ public record PostService (PostRepository postRepository, HistoryService history
 
         historyService.saveStatusInHistory(post, PostState.COMMENT_OK);
         historyService.saveStatusInHistory(post, PostState.ENABLED);
+        post.setIsEnabled(true);
     }
 
     private ResponseDTO mapToPageableQueryPosts( Pageable pageable){
@@ -137,5 +154,6 @@ public record PostService (PostRepository postRepository, HistoryService history
         postResponse.setLast(posts.isLast());
         return postResponse;
     }
+
 }
 

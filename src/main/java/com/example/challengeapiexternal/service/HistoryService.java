@@ -15,8 +15,5 @@ public record HistoryService(HistoryRepository historyRepository) {
         post.getHistory().add(new History(status));
     }
 
-    public Optional<History> getHistoryByIdPost(long postId){
-        return historyRepository.findById(postId);
-    }
 
 }
