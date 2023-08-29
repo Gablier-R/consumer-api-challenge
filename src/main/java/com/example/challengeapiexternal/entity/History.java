@@ -1,16 +1,16 @@
 package com.example.challengeapiexternal.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Setter
+@Getter
 @Entity(name = "history")
 public class History {
     @Id
@@ -21,6 +21,12 @@ public class History {
 
     public History(PostState status){
         this.setStatus(status);
-        this.setTimestamp(LocalDateTime.now());
+        this.setFormattedTimestamp(LocalDateTime.now());
     }
+
+    public void setFormattedTimestamp(LocalDateTime dateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        this.timestamp = LocalDateTime.parse(dateTime.format(formatter), formatter);
+    }
+
 }

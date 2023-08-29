@@ -40,6 +40,7 @@ public class ExternalApiService {
         }
     }
 
+
     public List<Comment> fetchCommentsForPost(Long postId) {
         String commentsUrl = EXTERNAL_API_URL + postId + "/comments";
         RestTemplate restTemplate = new RestTemplate();

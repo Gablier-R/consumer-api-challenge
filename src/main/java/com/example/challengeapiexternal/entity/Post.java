@@ -3,11 +3,15 @@ package com.example.challengeapiexternal.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
+@Setter
+@Getter
 
 @Entity(name = "post")
 public class Post {
@@ -22,8 +26,7 @@ public class Post {
     @JoinColumn(name ="post_id")
     private List<History> history = new ArrayList<>();
 
-    private Boolean reprocessed = false;
-
     @JsonIgnore
     private Boolean isEnabled;
+
 }

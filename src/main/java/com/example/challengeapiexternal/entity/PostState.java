@@ -1,5 +1,8 @@
 package com.example.challengeapiexternal.entity;
 
+import lombok.Getter;
+
+@Getter
 public enum PostState {
     CREATED("CREATED"),
     POST_FIND("POST_FIND"),
@@ -19,7 +22,4 @@ public enum PostState {
     }
 
 
-    public String getName() {
-        return name;
-    }
 }

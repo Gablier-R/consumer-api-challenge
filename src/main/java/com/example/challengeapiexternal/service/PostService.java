@@ -1,11 +1,9 @@
 package com.example.challengeapiexternal.service;
 
 import com.example.challengeapiexternal.dto.ResponseDTO;
-import com.example.challengeapiexternal.entity.History;
 import com.example.challengeapiexternal.entity.Post;
 import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.PostRepository;
-import org.modelmapper.ValidationException;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,29 +11,26 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public record PostService (PostRepository postRepository, HistoryService historyService, ExternalApiService externalApiService) {
-    public Post validateprocessPost(long postId) {
-        if (postId < 0 || postId > 100){
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while fetching post, resource not found: Post 1 - 100");
+
+    public Post validateProcessPost(long postId) {
+        if (postId < 1 || postId > 100){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "An error occurred while fetching post, resource not found: Post 1 - 100");
         }
         return processPost(postId);
     }
 
-    public Post validateDisablePost(Long postId) {
+    public Object validateDisablePost(Long postId) {
         Post post = getPostByIdOrException(postId);
-
         if (!post.getIsEnabled()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Disables a post that is in the ENABLED state.");
-        }
-        return disablePost(postId) ;
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Disables a post that is in the ENABLED state."); }
+        return disablePost(postId);
     }
 
-    public Post validatereprocessPost(long postId){
+    public Object validateReprocessPost(long postId){
         Post post = getPostByIdOrException(postId);
-
         return reprocessPost(post.getId());
     }
 
@@ -43,19 +38,7 @@ public record PostService (PostRepository postRepository, HistoryService history
         return mapToPageableQueryPosts(PageRequest.of(pageNo, pageSize));
     }
 
-
-
-//    public Post processPost(long postId) {
-//
-//        Optional<Post> post = postRepository.findById(postId);
-//
-//        if (post.isEmpty()) {
-//            return savePostInLocal(postId, postAlreadyNotExists(postId));
-//        }
-//        return post.get();
-//    }
-
-    public Post processPost(long postId) {
+    private Post processPost(long postId) {
         return postRepository.findById(postId)
                 .orElseGet(() -> savePostInLocal(postId, postAlreadyNotExists(postId)));
     }
@@ -63,25 +46,17 @@ public record PostService (PostRepository postRepository, HistoryService history
     private Post disablePost(long postId) {
         Post post = getPostByIdOrException(postId);
         historyService.saveStatusInHistory(post, PostState.DISABLED);
+        post.setIsEnabled(false);
         return postRepository.save(post);
     }
 
     private Post reprocessPost(long postId) {
         Post post = getPostByIdOrException(postId);
-        try {
             historyService.saveStatusInHistory(post, PostState.UPDATING);
-            externalApiService.fetchPostById(postId);
-
-            post.setReprocessed(true);
-
-        } catch (Exception e) {
-            historyService.saveStatusInHistory(post, PostState.FAILED);
-            historyService.saveStatusInHistory(post, PostState.DISABLED);
-        }
+            Post reprocessPost = externalApiService.fetchPostById(postId);
+            savePostInLocal(reprocessPost.getId(), postAlreadyNotExists(postId));
         return postRepository.save(post);
     }
-
-    //Mets for help main mets
 
     private Post getPostByIdOrException(long postId) {
          return postRepository.findById(postId).orElseThrow(
@@ -94,6 +69,7 @@ public record PostService (PostRepository postRepository, HistoryService history
         } catch (Exception e) {
             historyService.saveStatusInHistory(post, PostState.FAILED);
             historyService.saveStatusInHistory(post, PostState.DISABLED);
+            post.setIsEnabled(false);
         }
         return postRepository.save(post);
     }
