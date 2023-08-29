@@ -31,6 +31,7 @@ public record PostService (PostRepository postRepository, HistoryService history
 
     public Object validateReprocessPost(long postId){
         Post post = getPostByIdOrException(postId);
+        historyService.saveStatusInHistory(post, PostState.UPDATING);
         return reprocessPost(post.getId());
     }
 
@@ -51,10 +52,8 @@ public record PostService (PostRepository postRepository, HistoryService history
     }
 
     private Post reprocessPost(long postId) {
-        Post post = getPostByIdOrException(postId);
-            historyService.saveStatusInHistory(post, PostState.UPDATING);
-            Post reprocessPost = externalApiService.fetchPostById(postId);
-            savePostInLocal(reprocessPost.getId(), postAlreadyNotExists(postId));
+        Post reprocessPost = externalApiService.fetchPostById(postId);
+        Post post = savePostInLocal(reprocessPost.getId(), postAlreadyNotExists(postId));
         return postRepository.save(post);
     }
 
