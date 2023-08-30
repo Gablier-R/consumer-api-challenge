@@ -22,7 +22,7 @@ public record PostController (PostService postService) {
     //http://localhost:8080/posts/{postId}
     @PutMapping("/{postId}")
     public ResponseEntity<Post> reprocessPost(@PathVariable Long postId) {
-        return new ResponseEntity<>(postService.validateReprocessPost(postId), HttpStatus.OK);
+        return ResponseEntity.ok(postService.validateReprocessPost(postId));
     }
 
     //http://localhost:8080/posts?pageNo=0&pageSize=5
