@@ -22,14 +22,14 @@ public record PostService (PostRepository postRepository, HistoryService history
         return processPost(postId);
     }
 
-    public Object validateDisablePost(Long postId) {
+    public Post validateDisablePost(Long postId) {
         Post post = getPostByIdOrException(postId);
         if (!post.getIsEnabled()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Disables a post that is in the ENABLED state."); }
         return disablePost(postId);
     }
 
-    public Object validateReprocessPost(long postId){
+    public Post validateReprocessPost(long postId){
         Post post = getPostByIdOrException(postId);
         historyService.saveStatusInHistory(post, PostState.UPDATING);
         return reprocessPost(post.getId());

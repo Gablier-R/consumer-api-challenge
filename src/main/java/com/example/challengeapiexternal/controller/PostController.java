@@ -16,13 +16,13 @@ public record PostController (PostService postService) {
     //http://localhost:8080/posts/{postId}
     @DeleteMapping("/{postId}")
     public ResponseEntity<Post> disablePost(@PathVariable Long postId) {
-        return ResponseEntity.ok((Post) postService.validateDisablePost(postId));
+        return ResponseEntity.ok(postService.validateDisablePost(postId));
     }
 
     //http://localhost:8080/posts/{postId}
     @PutMapping("/{postId}")
     public ResponseEntity<Post> reprocessPost(@PathVariable Long postId) {
-        return new ResponseEntity<>((Post) postService.validateReprocessPost(postId), HttpStatus.OK);
+        return new ResponseEntity<>(postService.validateReprocessPost(postId), HttpStatus.OK);
     }
 
     //http://localhost:8080/posts?pageNo=0&pageSize=5
