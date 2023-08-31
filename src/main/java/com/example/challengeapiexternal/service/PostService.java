@@ -42,7 +42,7 @@ public record PostService (PostRepository postRepository, HistoryService history
 
     private Post processPost(long postId) {
         return postRepository.findById(postId)
-                .orElseGet(() -> savePostInLocal(postId, postAlreadyNotExists(postId)));
+                .orElseGet(() -> savePostInLocal(newPost(postId)));
     }
 
     private Post disablePost(long postId) {
@@ -54,7 +54,7 @@ public record PostService (PostRepository postRepository, HistoryService history
 
     private Post reprocessPost(long postId) {
         Post reprocessPost = externalApiService.fetchPostById(postId);
-        Post post = savePostInLocal(reprocessPost.getId(), postAlreadyNotExists(postId));
+        Post post = savePostInLocal(reprocessPost);
         historyService.deleteHistoriesWithNullPostId();
         return postRepository.save(post);
     }
@@ -64,10 +64,9 @@ public record PostService (PostRepository postRepository, HistoryService history
                 () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post not found/exist in database"));
     }
 
-    private Post savePostInLocal(long postId, Post post) {
+    private Post savePostInLocal(Post post) {
         try {
-            fetchPost(postId, post);
-
+            fetchPost(post);
         } catch (Exception e) {
             historyService.saveStatusInHistory(post, PostState.FAILED);
             historyService.saveStatusInHistory(post, PostState.DISABLED);
@@ -76,34 +75,33 @@ public record PostService (PostRepository postRepository, HistoryService history
         return postRepository.save(post);
     }
 
-    private Post postAlreadyNotExists(long postId) {
+    private Post newPost(long postId) {
         Post post = new Post();
         post.setId(postId);
         return post;
     }
 
-    private void fetchPost(long postId, Post post){
+    private void fetchPost(Post post){
         historyService.saveStatusInHistory(post, PostState.CREATED);
         historyService.saveStatusInHistory(post, PostState.POST_FIND);
 
-        post.setTitle(externalApiService.fetchPostById(postId).getTitle());
-        post.setBody(externalApiService.fetchPostById(postId).getBody());
+        post.setTitle(externalApiService.fetchPostById(post.getId()).getTitle());
+        post.setBody(externalApiService.fetchPostById(post.getId()).getBody());
 
         historyService.saveStatusInHistory(post, PostState.POST_OK);
 
-        fetchComments(post, postId);
+        fetchComments(post);
     }
 
-    private void fetchComments(Post post, long postId) {
+    private void fetchComments(Post post) {
         historyService.saveStatusInHistory(post, PostState.COMMENT_FIND);
 
-        post.getComments().addAll(externalApiService.fetchCommentsForPost(postId));
+        post.getComments().addAll(externalApiService.fetchCommentsForPost(post.getId()));
 
         historyService.saveStatusInHistory(post, PostState.COMMENT_OK);
         historyService.saveStatusInHistory(post, PostState.ENABLED);
         post.setIsEnabled(true);
     }
-
 
     private ResponseDTO mapToPageableQueryPosts( Pageable pageable){
         Page<Post> posts = postRepository.findAll(pageable);
