@@ -23,7 +23,7 @@ public record PostService (PostRepository postRepository, HistoryService history
         return processPost(postId);
     }
 
-    public Post validateDisablePost(Long postId) {
+    public Post validateDisablePost(long postId) {
         Post post = getPostByIdOrException(postId);
         if (!post.getIsEnabled()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Disables a post that is in the ENABLED state."); }
