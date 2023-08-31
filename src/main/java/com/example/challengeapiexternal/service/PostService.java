@@ -1,6 +1,7 @@
 package com.example.challengeapiexternal.service;
 
 import com.example.challengeapiexternal.dto.ResponseDTO;
+import com.example.challengeapiexternal.entity.History;
 import com.example.challengeapiexternal.entity.Post;
 import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.PostRepository;
@@ -54,6 +55,7 @@ public record PostService (PostRepository postRepository, HistoryService history
     private Post reprocessPost(long postId) {
         Post reprocessPost = externalApiService.fetchPostById(postId);
         Post post = savePostInLocal(reprocessPost.getId(), postAlreadyNotExists(postId));
+        historyService.deleteHistoriesWithNullPostId();
         return postRepository.save(post);
     }
 
@@ -65,6 +67,7 @@ public record PostService (PostRepository postRepository, HistoryService history
     private Post savePostInLocal(long postId, Post post) {
         try {
             fetchPost(postId, post);
+
         } catch (Exception e) {
             historyService.saveStatusInHistory(post, PostState.FAILED);
             historyService.saveStatusInHistory(post, PostState.DISABLED);
@@ -100,6 +103,7 @@ public record PostService (PostRepository postRepository, HistoryService history
         historyService.saveStatusInHistory(post, PostState.ENABLED);
         post.setIsEnabled(true);
     }
+
 
     private ResponseDTO mapToPageableQueryPosts( Pageable pageable){
         Page<Post> posts = postRepository.findAll(pageable);
