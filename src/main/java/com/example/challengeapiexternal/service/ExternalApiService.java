@@ -3,6 +3,7 @@ package com.example.challengeapiexternal.service;
 import com.example.challengeapiexternal.entity.Comment;
 import com.example.challengeapiexternal.entity.Post;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +15,6 @@ import java.util.Objects;
 
 import static com.example.challengeapiexternal.utils.AppConstants.EXTERNAL_API_URL;
 
-
 @Service
 public record ExternalApiService() {
 
@@ -24,7 +24,7 @@ public record ExternalApiService() {
 
         try {
             ResponseEntity<Post> response = restTemplate.getForEntity(postUrl, Post.class);
-            HttpStatus statusCode = (HttpStatus) response.getStatusCode();
+            HttpStatusCode statusCode =  response.getStatusCode();
 
             if (statusCode == HttpStatus.OK) {
                 return response.getBody();
