@@ -3,7 +3,6 @@ package com.example.challengeapiexternal.controller;
 import com.example.challengeapiexternal.dto.ResponseDTO;
 import com.example.challengeapiexternal.entity.Post;
 import com.example.challengeapiexternal.service.PostService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import static com.example.challengeapiexternal.utils.AppConstants.DEFAULT_PAGE_NUMBER;
@@ -25,7 +24,7 @@ public record PostController (PostService postService) {
         return ResponseEntity.ok(postService.validateReprocessPost(postId));
     }
 
-    //http://localhost:8080/posts?pageNo=0&pageSize=5
+    //http://localhost:8080/posts?pageNo=0&pageSize=100
     @GetMapping
     public ResponseEntity<ResponseDTO> queryPosts(@RequestParam( defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
                                                   @RequestParam( defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize){

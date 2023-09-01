@@ -8,8 +8,6 @@ import lombok.Data;
 public class Comment {
     @Id
     private Integer id;
-    private String name;
-    private String email;
     @Column(columnDefinition = "TEXT")
     private String body;
 }

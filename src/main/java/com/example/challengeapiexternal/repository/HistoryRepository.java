@@ -11,11 +11,4 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface HistoryRepository extends JpaRepository<History, Long> {
-
-    @Transactional
-    @Modifying
-    @Query( value = "DELETE FROM history  WHERE post_Id IS NULL", nativeQuery = true)
-    void findHistoryWithNullPostId();
-
-}
+public interface HistoryRepository extends JpaRepository<History, Long> {}

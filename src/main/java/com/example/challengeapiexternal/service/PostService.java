@@ -1,7 +1,7 @@
 package com.example.challengeapiexternal.service;
 
 import com.example.challengeapiexternal.dto.ResponseDTO;
-import com.example.challengeapiexternal.entity.History;
+import com.example.challengeapiexternal.entity.Comment;
 import com.example.challengeapiexternal.entity.Post;
 import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.PostRepository;
@@ -12,9 +12,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public record PostService (PostRepository postRepository, HistoryService historyService, ExternalApiService externalApiService) {
+    public ResponseDTO queryPosts(int pageNo, int pageSize) {
+        return mapToPageableQueryPosts(PageRequest.of(pageNo, pageSize));
+    }
 
     public Post validateProcessPost(long postId) {
         if (postId < 1 || postId > 100){
@@ -24,20 +28,14 @@ public record PostService (PostRepository postRepository, HistoryService history
     }
 
     public Post validateDisablePost(long postId) {
-        Post post = getPostByIdOrException(postId);
-        if (!post.getIsEnabled()) {
+        if (!getPostByIdOrException(postId).getIsEnabled()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Disables a post that is in the ENABLED state."); }
         return disablePost(postId);
     }
 
     public Post validateReprocessPost(long postId){
         Post post = getPostByIdOrException(postId);
-        historyService.saveStatusInHistory(post, PostState.UPDATING);
-        return reprocessPost(post.getId());
-    }
-
-    public ResponseDTO queryPosts(int pageNo, int pageSize) {
-        return mapToPageableQueryPosts(PageRequest.of(pageNo, pageSize));
+        return reprocessPost(post);
     }
 
     private Post processPost(long postId) {
@@ -52,55 +50,60 @@ public record PostService (PostRepository postRepository, HistoryService history
         return postRepository.save(post);
     }
 
-    private Post reprocessPost(long postId) {
-        Post reprocessPost = externalApiService.fetchPostById(postId);
-        Post post = savePostInLocal(reprocessPost);
-        historyService.deleteHistoriesWithNullPostId();
-        return postRepository.save(post);
-    }
-
-    private Post getPostByIdOrException(long postId) {
-         return postRepository.findById(postId).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post not found/exist in database"));
+    private Post reprocessPost(Post post) {
+        historyService.saveStatusInHistory(post, PostState.UPDATING);
+        return savePostInLocal(post);
     }
 
     private Post savePostInLocal(Post post) {
-        try {
-            fetchPost(post);
-        } catch (Exception e) {
-            historyService.saveStatusInHistory(post, PostState.FAILED);
-            historyService.saveStatusInHistory(post, PostState.DISABLED);
-            post.setIsEnabled(false);
-        }
-        return postRepository.save(post);
+        return postRepository.save(fetchPost(post));
+    }
+
+    private Post getPostByIdOrException(long postId) {
+        return postRepository.findById(postId).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post not found/exist in database"));
     }
 
     private Post newPost(long postId) {
         Post post = new Post();
         post.setId(postId);
+        historyService.saveStatusInHistory(post, PostState.CREATED);
         return post;
     }
 
-    private void fetchPost(Post post){
-        historyService.saveStatusInHistory(post, PostState.CREATED);
-        historyService.saveStatusInHistory(post, PostState.POST_FIND);
+    private Post fetchPost(Post post){
+        try {
+            historyService.saveStatusInHistory(post, PostState.POST_FIND);
 
-        post.setTitle(externalApiService.fetchPostById(post.getId()).getTitle());
-        post.setBody(externalApiService.fetchPostById(post.getId()).getBody());
+            post.setTitle(externalApiService.fetchPostById(post.getId()).getTitle());
+            post.setBody(externalApiService.fetchPostById(post.getId()).getBody());
 
-        historyService.saveStatusInHistory(post, PostState.POST_OK);
+            historyService.saveStatusInHistory(post, PostState.POST_OK);
 
-        fetchComments(post);
+        } catch (Exception e) {
+            historyService.saveStatusInHistory(post, PostState.FAILED);
+            historyService.saveStatusInHistory(post, PostState.DISABLED);
+            post.setIsEnabled(false);
+        }
+        return fetchComments(post);
     }
 
-    private void fetchComments(Post post) {
-        historyService.saveStatusInHistory(post, PostState.COMMENT_FIND);
+    private Post fetchComments(Post post) {
+        try {
+            historyService.saveStatusInHistory(post, PostState.COMMENT_FIND);
 
-        post.getComments().addAll(externalApiService.fetchCommentsForPost(post.getId()));
+            post.getComments().clear();
+            post.getComments().addAll(externalApiService.fetchCommentsForPost(post.getId()));
 
-        historyService.saveStatusInHistory(post, PostState.COMMENT_OK);
-        historyService.saveStatusInHistory(post, PostState.ENABLED);
-        post.setIsEnabled(true);
+            historyService.saveStatusInHistory(post, PostState.COMMENT_OK);
+            historyService.saveStatusInHistory(post, PostState.ENABLED);
+            post.setIsEnabled(true);
+        }catch (Exception e){
+            historyService.saveStatusInHistory(post, PostState.FAILED);
+            historyService.saveStatusInHistory(post, PostState.DISABLED);
+            post.setIsEnabled(false);
+        }
+        return post;
     }
 
     private ResponseDTO mapToPageableQueryPosts( Pageable pageable){

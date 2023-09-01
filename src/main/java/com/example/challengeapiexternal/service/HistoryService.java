@@ -11,10 +11,4 @@ public record HistoryService(HistoryRepository historyRepository) {
     public void saveStatusInHistory(Post post, PostState status){
         post.getHistory().add(new History(status));
     }
-
-    public void deleteHistoriesWithNullPostId() {
-        historyRepository.findHistoryWithNullPostId();
-    }
-
-
 }

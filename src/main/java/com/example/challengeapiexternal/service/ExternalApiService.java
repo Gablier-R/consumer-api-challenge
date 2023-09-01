@@ -16,7 +16,7 @@ import static com.example.challengeapiexternal.utils.AppConstants.EXTERNAL_API_U
 
 
 @Service
-public class ExternalApiService {
+public record ExternalApiService() {
 
     public Post fetchPostById(Long postId) {
         String postUrl = EXTERNAL_API_URL + postId;
