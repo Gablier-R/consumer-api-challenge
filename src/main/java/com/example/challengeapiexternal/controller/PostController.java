@@ -9,7 +9,7 @@ import static com.example.challengeapiexternal.utils.AppConstants.DEFAULT_PAGE_N
 import static com.example.challengeapiexternal.utils.AppConstants.DEFAULT_PAGE_SIZE;
 
 @RestController
-        @RequestMapping("posts")
+@RequestMapping("posts")
 public record PostController (PostService postService) {
 
     //http://localhost:8080/posts/{postId}

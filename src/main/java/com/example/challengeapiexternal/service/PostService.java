@@ -1,7 +1,6 @@
 package com.example.challengeapiexternal.service;
 
 import com.example.challengeapiexternal.dto.ResponseDTO;
-import com.example.challengeapiexternal.entity.Comment;
 import com.example.challengeapiexternal.entity.Post;
 import com.example.challengeapiexternal.entity.PostState;
 import com.example.challengeapiexternal.repository.PostRepository;
@@ -9,10 +8,6 @@ import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public record PostService (PostRepository postRepository, HistoryService historyService, ExternalApiService externalApiService) {
@@ -106,26 +101,22 @@ public record PostService (PostRepository postRepository, HistoryService history
         return post;
     }
 
-    private ResponseDTO mapToPageableQueryPosts( Pageable pageable){
+    private ResponseDTO mapToPageableQueryPosts(Pageable pageable){
         Page<Post> posts = postRepository.findAll(pageable);
-
-        List<Post> listOfPost = posts.getContent();
-
-        List<Post> content = new ArrayList<>(listOfPost);
-
-        return mapToResponseDTO(posts, content);
+        return mapToResponseDTO(posts);
     }
 
-    private ResponseDTO mapToResponseDTO(Page<Post> posts, List<Post> post) {
-        ResponseDTO postResponse = new ResponseDTO();
-        postResponse.setPosts(post);
-        postResponse.setPageNo(posts.getNumber());
-        postResponse.setPageSize(posts.getSize());
-        postResponse.setTotalElements(posts.getTotalElements());
-        postResponse.setTotalPages(posts.getTotalPages());
-        postResponse.setLast(posts.isLast());
-        return postResponse;
+    private ResponseDTO mapToResponseDTO(Page<Post> posts) {
+        return new ResponseDTO(
+                posts.getContent(),
+                posts.getNumber(),
+                posts.getSize(),
+                posts.getTotalPages(),
+                posts.getTotalElements(),
+                posts.isLast()
+        );
     }
+
 
 }
 

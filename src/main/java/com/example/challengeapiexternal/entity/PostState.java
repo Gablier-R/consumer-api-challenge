@@ -1,6 +1,7 @@
 package com.example.challengeapiexternal.entity;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public enum PostState {
