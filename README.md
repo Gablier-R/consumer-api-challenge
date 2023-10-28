@@ -23,5 +23,5 @@ the api is not yet deployed, if you want to check the documentation and all the 
    git clone https://github.com/Gablier-R/consumer-api-challenge.git
 
 3. Access the swagger documentation:
-  ```bash
+   ```bash
    http://localhost:8080/swagger-ui.html
