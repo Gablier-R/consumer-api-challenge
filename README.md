@@ -19,6 +19,9 @@ After request on POST an internal flow will be started, fetching the post and as
 the api is not yet deployed, if you want to check the documentation and all the implementation details
 
 1. Clone the repository:
+   ```bash
    git clone https://github.com/Gablier-R/consumer-api-challenge.git
 
-2. Access the swagger documentation http://localhost:8080/swagger-ui.html
+3. Access the swagger documentation:
+  ```bash
+   http://localhost:8080/swagger-ui.html
